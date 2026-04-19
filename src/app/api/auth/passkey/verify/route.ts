@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { verifyAuthenticationResponse } from "@simplewebauthn/server";
-import type { AuthenticationResponseJSON } from "@simplewebauthn/types";
+import type {
+  AuthenticationResponseJSON,
+  AuthenticatorTransportFuture,
+} from "@simplewebauthn/types";
 import {
   createSessionForUser,
   getSessionCookieOptions,
@@ -11,6 +14,15 @@ import { getExpectedOrigins, rpID } from "@/lib/webauthn";
 import Passkey from "@/models/Passkey";
 import User from "@/models/User";
 import WebAuthnChallenge from "@/models/WebAuthnChallenge";
+
+const validAuthenticatorTransports = new Set<AuthenticatorTransportFuture>([
+  "ble",
+  "hybrid",
+  "internal",
+  "nfc",
+  "smart-card",
+  "usb",
+]);
 
 export async function POST(req: Request) {
   try {
@@ -38,6 +50,17 @@ export async function POST(req: Request) {
       );
     }
 
+    const transports = Array.isArray(passkey.transports)
+      ? passkey.transports.filter(
+          (
+            transport,
+          ): transport is AuthenticatorTransportFuture =>
+            validAuthenticatorTransports.has(
+              transport as AuthenticatorTransportFuture,
+            ),
+        )
+      : undefined;
+
     const verification = await verifyAuthenticationResponse({
       response: body,
       expectedChallenge: challenge.challenge,
@@ -49,7 +72,7 @@ export async function POST(req: Request) {
         ),
         credentialPublicKey: Uint8Array.from(passkey.publicKey),
         counter: passkey.counter,
-        transports: passkey.transports,
+        transports: transports?.length ? transports : undefined,
       },
       requireUserVerification: true,
     });
