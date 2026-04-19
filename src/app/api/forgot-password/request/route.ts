@@ -121,6 +121,8 @@ export async function POST(req: Request) {
         : { devOtp: otp }),
     });
   } catch (error) {
+    console.error("POST /api/forgot-password/request error:", error);
+
     return NextResponse.json(
       {
         success: false,
