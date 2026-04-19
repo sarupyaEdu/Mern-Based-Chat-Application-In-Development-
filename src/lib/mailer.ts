@@ -21,6 +21,9 @@ function getTransporter() {
     host: smtpHost,
     port: smtpPort,
     secure: smtpPort === 465,
+    connectionTimeout: 15_000,
+    greetingTimeout: 15_000,
+    socketTimeout: 20_000,
     auth: {
       user: smtpUser,
       pass: smtpPass,
