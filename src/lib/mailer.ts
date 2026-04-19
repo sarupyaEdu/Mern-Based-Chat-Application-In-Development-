@@ -2,6 +2,7 @@ import "server-only";
 
 import nodemailer from "nodemailer";
 
+const brevoApiKey = process.env.BREVO_API_KEY;
 const smtpHost = process.env.EMAIL_SERVER_HOST;
 const smtpPort = Number(process.env.EMAIL_SERVER_PORT || 587);
 const smtpUser = process.env.EMAIL_SERVER_USER;
@@ -9,7 +10,9 @@ const smtpPass = process.env.EMAIL_SERVER_PASSWORD;
 const smtpFrom = process.env.EMAIL_FROM;
 
 export function isEmailConfigured() {
-  return Boolean(smtpHost && smtpPort && smtpUser && smtpPass && smtpFrom);
+  return Boolean(
+    smtpFrom && (brevoApiKey || (smtpHost && smtpPort && smtpUser && smtpPass)),
+  );
 }
 
 function getTransporter() {
@@ -31,13 +34,68 @@ function getTransporter() {
   });
 }
 
-export async function sendPasswordResetOtpEmail({
+async function sendWithBrevoApi({
   to,
-  otp,
+  subject,
+  text,
+  html,
 }: {
   to: string;
-  otp: string;
+  subject: string;
+  text: string;
+  html: string;
 }) {
+  if (!brevoApiKey || !smtpFrom) {
+    throw new Error("Brevo email API is not configured");
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20_000);
+
+  try {
+    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": brevoApiKey,
+      },
+      body: JSON.stringify({
+        sender: {
+          email: smtpFrom,
+        },
+        to: [{ email: to }],
+        subject,
+        textContent: text,
+        htmlContent: html,
+      }),
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      const errorBody = await res.text();
+      throw new Error(`Brevo API request failed: ${res.status} ${errorBody}`);
+    }
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function sendMail({
+  to,
+  subject,
+  text,
+  html,
+}: {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+}) {
+  if (brevoApiKey) {
+    await sendWithBrevoApi({ to, subject, text, html });
+    return;
+  }
+
   const transporter = getTransporter();
 
   if (!transporter) {
@@ -46,6 +104,21 @@ export async function sendPasswordResetOtpEmail({
 
   await transporter.sendMail({
     from: smtpFrom,
+    to,
+    subject,
+    text,
+    html,
+  });
+}
+
+export async function sendPasswordResetOtpEmail({
+  to,
+  otp,
+}: {
+  to: string;
+  otp: string;
+}) {
+  await sendMail({
     to,
     subject: "Your password reset OTP",
     text: `Your OTP for resetting the password is ${otp}. It expires in 10 minutes.`,
@@ -67,14 +140,7 @@ export async function sendEmailVerificationOtpEmail({
   to: string;
   otp: string;
 }) {
-  const transporter = getTransporter();
-
-  if (!transporter) {
-    throw new Error("Email transport is not configured");
-  }
-
-  await transporter.sendMail({
-    from: smtpFrom,
+  await sendMail({
     to,
     subject: "Verify your email",
     text: `Your OTP for verifying your email is ${otp}. It expires in 10 minutes.`,
@@ -96,14 +162,7 @@ export async function sendLoginTwoFactorOtpEmail({
   to: string;
   otp: string;
 }) {
-  const transporter = getTransporter();
-
-  if (!transporter) {
-    throw new Error("Email transport is not configured");
-  }
-
-  await transporter.sendMail({
-    from: smtpFrom,
+  await sendMail({
     to,
     subject: "Your 2FA login code",
     text: `Your OTP for finishing sign in is ${otp}. It expires in 10 minutes.`,
@@ -125,14 +184,7 @@ export async function sendDisableTwoFactorOtpEmail({
   to: string;
   otp: string;
 }) {
-  const transporter = getTransporter();
-
-  if (!transporter) {
-    throw new Error("Email transport is not configured");
-  }
-
-  await transporter.sendMail({
-    from: smtpFrom,
+  await sendMail({
     to,
     subject: "Disable 2FA OTP",
     text: `Your OTP for disabling two-factor authentication is ${otp}. It expires in 10 minutes.`,
