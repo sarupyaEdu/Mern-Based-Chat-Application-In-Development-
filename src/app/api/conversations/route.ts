@@ -226,22 +226,26 @@ export async function POST(req: Request) {
 
     if (!conversation) {
       createdNewConversation = true;
-      conversation = await Conversation.create({
+      const createdConversation = await Conversation.create({
         participants: [session.user.id, receiverId],
         participantKey,
       });
 
-      conversation = await Conversation.findById(conversation._id).populate(
+      conversation = await Conversation.findById(createdConversation._id).populate(
         "participants",
         "name email phone avatar isOnline lastSeen",
       );
 
-      conversation = await conversation?.populate(
-        "lastMessage",
-        "text image createdAt",
-      );
+      if (!conversation) {
+        return NextResponse.json(
+          { success: false, message: "Failed to load created conversation" },
+          { status: 500 },
+        );
+      }
 
-      conversation = await conversation?.populate({
+      conversation = await conversation.populate("lastMessage", "text image createdAt");
+
+      conversation = await conversation.populate({
         path: "pinnedMessage",
         populate: {
           path: "sender",
