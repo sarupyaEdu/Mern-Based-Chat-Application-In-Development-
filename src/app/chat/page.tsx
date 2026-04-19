@@ -12,8 +12,10 @@ import {
   useRef,
   useState,
 } from "react";
+import type { SyntheticEvent } from "react";
 import dynamic from "next/dynamic";
 import { Grid } from "@giphy/react-components";
+import type { IGif } from "@giphy/js-types";
 import {
   CheckSquare,
   ChevronDown,
@@ -118,12 +120,13 @@ const EmojiPicker = dynamic(() => import("emoji-picker-react"), {
   ssr: false,
 });
 
-type GiphyGif = {
-  images?: {
-    original?: {
-      url?: string;
-    };
-  };
+type DisplayUser = {
+  _id?: string;
+  name?: string;
+  savedName?: string;
+  accountName?: string;
+  avatar?: string;
+  phone?: string;
 };
 
 const EMPTY_GIFS_RESULT = {
@@ -292,13 +295,7 @@ export default function ChatPage() {
   );
 
   const getDisplayName = useCallback(
-    (
-      user:
-        | Pick<UserType, "_id" | "name" | "savedName">
-        | Pick<MessageType["sender"], "_id" | "name">
-        | null
-        | undefined,
-    ) => {
+    (user: DisplayUser | null | undefined) => {
       if (!user) return "Unknown";
 
       const savedContact = contactsById.get(normalizeId(user._id));
@@ -339,13 +336,7 @@ export default function ChatPage() {
   );
 
   const getAccountName = useCallback(
-    (
-      user:
-        | Pick<UserType, "_id" | "name" | "accountName">
-        | Pick<MessageType["sender"], "_id" | "name">
-        | null
-        | undefined,
-    ) => {
+    (user: DisplayUser | null | undefined) => {
       if (!user) return "";
 
       const savedContact = contactsById.get(normalizeId(user._id));
@@ -1349,7 +1340,7 @@ export default function ChatPage() {
   }, []);
 
   const renderAvatar = (
-    user: Pick<UserType, "name" | "avatar"> | null | undefined,
+    user: Pick<DisplayUser, "name" | "avatar"> | null | undefined,
     sizeClass = "h-10 w-10",
   ) => {
     if (user?.avatar) {
@@ -3820,7 +3811,6 @@ export default function ChatPage() {
                       <EmojiPicker
                         width={320}
                         height={420}
-                        theme="dark"
                         lazyLoadEmojis
                         searchPlaceholder="Search emojis"
                         onEmojiClick={(emojiData: EmojiClickData) =>
@@ -3851,9 +3841,9 @@ export default function ChatPage() {
                               gutter={8}
                               noLink
                               fetchGifs={fetchGifs}
-                              onGifClick={(gif: GiphyGif, e: Event) => {
+                              onGifClick={(gif: IGif, e: SyntheticEvent<HTMLElement, Event>) => {
                                 e.preventDefault();
-                                const src = gif.images?.original?.url;
+                                const src = gif.images.original.url;
                                 if (src) {
                                   stageGifMessage(src);
                                 }

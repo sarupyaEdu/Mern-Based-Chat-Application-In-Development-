@@ -1,11 +1,21 @@
 import { NextResponse } from "next/server";
 import { generateRegistrationOptions } from "@simplewebauthn/server";
+import type { AuthenticatorTransportFuture } from "@simplewebauthn/types";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { rpID, rpName } from "@/lib/webauthn";
 import Passkey from "@/models/Passkey";
 import WebAuthnChallenge from "@/models/WebAuthnChallenge";
 import User from "@/models/User";
+
+const validAuthenticatorTransports = new Set<AuthenticatorTransportFuture>([
+  "ble",
+  "hybrid",
+  "internal",
+  "nfc",
+  "smart-card",
+  "usb",
+]);
 
 export async function POST() {
   try {
@@ -46,8 +56,18 @@ export async function POST() {
         authenticatorAttachment: "platform",
       },
       excludeCredentials: existingPasskeys.map((passkey) => ({
-        id: passkey.credentialID,
-        transports: passkey.transports,
+        id: Uint8Array.from(Buffer.from(passkey.credentialID, "base64url")),
+        type: "public-key" as const,
+        transports: Array.isArray(passkey.transports)
+          ? passkey.transports.filter(
+              (
+                transport,
+              ): transport is AuthenticatorTransportFuture =>
+                validAuthenticatorTransports.has(
+                  transport as AuthenticatorTransportFuture,
+                ),
+            )
+          : undefined,
       })),
     });
 

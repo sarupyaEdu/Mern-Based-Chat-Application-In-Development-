@@ -5,6 +5,34 @@ import { connectDB } from "@/lib/db";
 import Contact from "@/models/Contact";
 import User from "@/models/User";
 
+type PlainContactUser = {
+  _id?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  avatar?: string;
+  bio?: string;
+  status?: string;
+  isOnline?: boolean;
+  lastSeen?: string | Date;
+};
+
+function toPlainContactUser(value: unknown): PlainContactUser | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  if ("toObject" in value && typeof value.toObject === "function") {
+    return value.toObject() as PlainContactUser;
+  }
+
+  if ("_id" in value || "name" in value || "email" in value) {
+    return value as PlainContactUser;
+  }
+
+  return null;
+}
+
 export async function GET() {
   try {
     const session = await auth();
@@ -31,10 +59,7 @@ export async function GET() {
       success: true,
       users: contacts
         .map((contact) => {
-          const contactUser =
-            typeof contact.contactUser === "object" && contact.contactUser
-              ? contact.contactUser.toObject?.() ?? contact.contactUser
-              : null;
+          const contactUser = toPlainContactUser(contact.contactUser);
 
           if (!contactUser) {
             return null;
@@ -238,10 +263,7 @@ export async function PATCH(req: Request) {
     contact.savedName = parsed.data.name.trim();
     await contact.save();
 
-    const contactUser =
-      typeof contact.contactUser === "object" && contact.contactUser
-        ? contact.contactUser.toObject?.() ?? contact.contactUser
-        : null;
+    const contactUser = toPlainContactUser(contact.contactUser);
 
     if (!contactUser) {
       return NextResponse.json(

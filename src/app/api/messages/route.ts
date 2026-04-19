@@ -19,10 +19,11 @@ function hasAllParticipants(
 }
 
 async function syncConversationAfterMessageRemoval(
-  conversation: mongoose.Document & {
-    _id: mongoose.Types.ObjectId;
-    lastMessage?: mongoose.Types.ObjectId | null;
-    pinnedMessage?: mongoose.Types.ObjectId | null;
+  conversation: {
+    _id: mongoose.Types.ObjectId | string;
+    lastMessage?: mongoose.Types.ObjectId | string | null;
+    pinnedMessage?: mongoose.Types.ObjectId | string | null;
+    save: () => Promise<unknown>;
   },
   removedMessageId: string,
 ) {
@@ -39,7 +40,11 @@ async function syncConversationAfterMessageRemoval(
       _id: { $ne: removedMessageId },
     }).sort({ createdAt: -1 });
 
-    conversation.lastMessage = latestRemainingMessage?._id || null;
+    const latestRemainingMessageId = latestRemainingMessage?._id;
+    conversation.lastMessage =
+      typeof latestRemainingMessageId === "string"
+        ? new mongoose.Types.ObjectId(latestRemainingMessageId)
+        : latestRemainingMessageId || null;
     shouldSaveConversation = true;
   }
 
