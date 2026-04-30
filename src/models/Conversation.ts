@@ -13,8 +13,6 @@ const ConversationSchema = new Schema<IConversation>(
     participantKey: {
       type: String,
       trim: true,
-      unique: true,
-      sparse: true,
     },
     lastMessage: {
       type: Schema.Types.ObjectId,

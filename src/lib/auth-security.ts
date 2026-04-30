@@ -51,7 +51,7 @@ export async function issueEmailVerificationOtp({
     },
     {
       upsert: true,
-      new: true,
+      returnDocument: "after",
       setDefaultsOnInsert: true,
     },
   );

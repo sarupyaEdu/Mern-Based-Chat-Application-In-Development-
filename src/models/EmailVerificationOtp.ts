@@ -24,7 +24,6 @@ const EmailVerificationOtpSchema = new Schema<IEmailVerificationOtp>(
     expiresAt: {
       type: Date,
       required: true,
-      index: true,
     },
     attempts: {
       type: Number,

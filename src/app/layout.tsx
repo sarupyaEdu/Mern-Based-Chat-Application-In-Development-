@@ -3,7 +3,7 @@ import "./globals.css";
 import AuthSessionProvider from "@/components/providers/SessionProvider";
 
 export const metadata: Metadata = {
-  title: "MERN Chat App",
+  title: "Next.js Chat App",
   description: "Real-time chat app with Next.js, MongoDB and Socket.IO",
 };
 

@@ -24,7 +24,6 @@ const PasswordResetOtpSchema = new Schema<IPasswordResetOtp>(
     expiresAt: {
       type: Date,
       required: true,
-      index: true,
     },
     attempts: {
       type: Number,
