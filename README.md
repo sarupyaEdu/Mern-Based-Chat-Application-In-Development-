@@ -1,6 +1,10 @@
-# Next Chat App
 
-A real-time chat application built with Next.js, Socket.IO, MongoDB, email OTP flows, passkeys, TOTP 2FA, contacts, GIFs, attachments, and profile/security management.
+## Next Chat App
+
+Next Chat App is a full-stack real-time chat application built with Next.js, React, Socket.IO, and MongoDB. It provides secure user authentication, live messaging, conversation management, media sharing, email verification, password reset, two-factor authentication, and passkey support.
+
+The project is designed as a modern communication platform with a responsive interface, real-time updates, and production-focused authentication features.
+
 
 ## Local Development
 
@@ -10,13 +14,8 @@ A real-time chat application built with Next.js, Socket.IO, MongoDB, email OTP f
 npm install
 ```
 
-2. Copy the environment template and fill in your real values:
 
-```bash
-cp .env.example .env
-```
-
-3. Start the app:
+2. Start the app:
 
 ```bash
 npm run dev
@@ -63,22 +62,9 @@ Railway is the recommended path for this project.
 
 The app already reads `process.env.PORT`, so it is ready for Railway-style hosting.
 
-## GitHub Upload
-
-If Git is not initialized yet:
-
-```bash
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin https://github.com/<your-username>/<your-repo>.git
-git push -u origin main
-```
 
 ## Notes
 
-- Do not commit `.env`.
 - Rotate any secrets that were ever exposed during development.
 - Passkeys require `https://` in production, or `localhost` in local development.
 "# Mern-Based-Chat-Application-In-Development-" 
